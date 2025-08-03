@@ -76,6 +76,5 @@ This project is open-source and available under the MIT License.
 Developed by @samihadev
 Feel free to contribute, suggest improvements, or ask questions.
 
-yaml
-Copier
-Modifier
+
+
