@@ -41,9 +41,7 @@ python3 -m venv venv
 source venv/bin/activate  # On Windows use: venv\Scripts\activate
 pip install -r requirements.txt
 ⚙️ Running the App
-bash
-Copier
-Modifier
+
 python app.py
 Then open your browser at: http://localhost:5000
 
