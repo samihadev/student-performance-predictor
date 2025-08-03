@@ -1,0 +1,674 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Performance Predictor</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        .navbar {
+            background: rgba(255, 255, 255, 0.95) !important;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 2px 20px rgba(0, 0, 0, 0.1);
+        }
+        
+        .container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 2rem;
+            margin: 2rem auto;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            backdrop-filter: blur(10px);
+        }
+        
+        .form-section {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            border-left: 4px solid #667eea;
+        }
+        
+        .form-control, .form-select {
+            border: 2px solid #e9ecef;
+            border-radius: 10px;
+            padding: 0.75rem;
+            transition: all 0.3s ease;
+        }
+        
+        .form-control:focus, .form-select:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+        }
+        
+        .btn-predict {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            border: none;
+            padding: 1rem 2rem;
+            border-radius: 50px;
+            color: white;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: all 0.3s ease;
+            width: 100%;
+        }
+        
+        .btn-predict:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+            color: white;
+        }
+        
+        .prediction-result {
+            background: linear-gradient(45deg, #28a745, #20c997);
+            color: white;
+            padding: 2rem;
+            border-radius: 20px;
+            text-align: center;
+            margin: 2rem 0;
+            animation: fadeInUp 0.6s ease;
+        }
+        
+        .prediction-value {
+            font-size: 3rem;
+            font-weight: bold;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+        }
+        
+        .explanation-card {
+            background: white;
+            border-radius: 15px;
+            padding: 1.5rem;
+            margin: 1rem 0;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            border-left: 4px solid #667eea;
+        }
+        
+        .feature-impact {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.5rem 0;
+            border-bottom: 1px solid #e9ecef;
+        }
+        
+        .feature-impact:last-child {
+            border-bottom: none;
+        }
+        
+        .impact-positive {
+            color: #28a745;
+            font-weight: bold;
+        }
+        
+        .impact-negative {
+            color: #dc3545;
+            font-weight: bold;
+        }
+        
+        .loading-spinner {
+            display: none;
+            text-align: center;
+            padding: 2rem;
+        }
+        
+        .alert {
+            border-radius: 15px;
+            border: none;
+            padding: 1rem 1.5rem;
+        }
+        
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .shap-plot {
+            max-width: 100%;
+            height: auto;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-light">
+        <div class="container-fluid">
+            <a class="navbar-brand fw-bold text-primary" href="#">
+                <i class="fas fa-graduation-cap me-2"></i>Student Performance Predictor
+            </a>
+            <div class="navbar-nav ms-auto">
+                <a class="nav-link" href="#"><i class="fas fa-home me-1"></i>Home</a>
+                <a class="nav-link active" href="#"><i class="fas fa-chart-line me-1"></i>Predict</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <h2 class="text-center mb-4">
+            <i class="fas fa-brain text-primary me-2"></i>Student Performance Prediction with AI Explanation
+        </h2>
+        
+        <div id="alert-container"></div>
+        
+        <form id="prediction-form">
+            <!-- Personal Information -->
+            <div class="form-section">
+                <h4><i class="fas fa-user text-primary me-2"></i>Personal Information</h4>
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">Gender</label>
+                        <select class="form-select" name="sex" required>
+                            <option value="">Select Gender</option>
+                            <option value="F">Female</option>
+                            <option value="M">Male</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">Age</label>
+                        <input type="number" class="form-control" name="age" min="15" max="22" required placeholder="Enter age">
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">Address Type</label>
+                        <select class="form-select" name="address" required>
+                            <option value="">Select Address Type</option>
+                            <option value="U">Urban</option>
+                            <option value="R">Rural</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Family Background -->
+            <div class="form-section">
+                <h4><i class="fas fa-home text-primary me-2"></i>Family Background</h4>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Mother's Education</label>
+                        <select class="form-select" name="Medu" required>
+                            <option value="">Select Education Level</option>
+                            <option value="0">None</option>
+                            <option value="1">Primary (4th grade)</option>
+                            <option value="2">5th-9th grade</option>
+                            <option value="3">Secondary</option>
+                            <option value="4">Higher</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Father's Education</label>
+                        <select class="form-select" name="Fedu" required>
+                            <option value="">Select Education Level</option>
+                            <option value="0">None</option>
+                            <option value="1">Primary (4th grade)</option>
+                            <option value="2">5th-9th grade</option>
+                            <option value="3">Secondary</option>
+                            <option value="4">Higher</option>
+                        </select>
+                    </div>
+                    <div class="col-md-12 mb-3">
+                        <label class="form-label">Family Relationship Quality (1-5)</label>
+                        <select class="form-select" name="famrel" required>
+                            <option value="">Select Quality</option>
+                            <option value="1">1 - Very Poor</option>
+                            <option value="2">2 - Poor</option>
+                            <option value="3">3 - Average</option>
+                            <option value="4">4 - Good</option>
+                            <option value="5">5 - Excellent</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Academic Information -->
+            <div class="form-section">
+                <h4><i class="fas fa-school text-primary me-2"></i>Academic Information</h4>
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">Weekly Study Time</label>
+                        <select class="form-select" name="studytime" required>
+                            <option value="">Select Study Time</option>
+                            <option value="1">1-2 hours</option>
+                            <option value="2">2-5 hours</option>
+                            <option value="3">5-10 hours</option>
+                            <option value="4">>10 hours</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">Past Class Failures</label>
+                        <select class="form-select" name="failures" required>
+                            <option value="">Select Failures</option>
+                            <option value="0">0</option>
+                            <option value="1">1</option>
+                            <option value="2">2</option>
+                            <option value="3">3+</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">Extra School Support</label>
+                        <select class="form-select" name="schoolsup" required>
+                            <option value="">Select Support</option>
+                            <option value="yes">Yes</option>
+                            <option value="no">No</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">First Period Grade (G1)</label>
+                        <input type="number" class="form-control" name="G1" min="0" max="20" step="0.1" required placeholder="0-20">
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Second Period Grade (G2)</label>
+                        <input type="number" class="form-control" name="G2" min="0" max="20" step="0.1" required placeholder="0-20">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Additional Information -->
+            <div class="form-section">
+                <h4><i class="fas fa-info-circle text-primary me-2"></i>Additional Information</h4>
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">Number of Absences</label>
+                        <input type="number" class="form-control" name="absences" min="0" max="93" required placeholder="0-93">
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">Health Status (1-5)</label>
+                        <select class="form-select" name="health" required>
+                            <option value="">Select Health</option>
+                            <option value="1">1 - Very Poor</option>
+                            <option value="2">2 - Poor</option>
+                            <option value="3">3 - Average</option>
+                            <option value="4">4 - Good</option>
+                            <option value="5">5 - Excellent</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">Social Activity Level (1-5)</label>
+                        <select class="form-select" name="goout" required>
+                            <option value="">Select Level</option>
+                            <option value="1">1 - Very Low</option>
+                            <option value="2">2 - Low</option>
+                            <option value="3">3 - Average</option>
+                            <option value="4">4 - High</option>
+                            <option value="5">5 - Very High</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div class="text-center">
+                <button type="submit" class="btn btn-predict">
+                    <i class="fas fa-brain me-2"></i>Predict Performance with AI Explanation
+                </button>
+            </div>
+        </form>
+
+        <div class="loading-spinner" id="loading">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <p class="mt-2">Analyzing student data and generating AI explanations...</p>
+        </div>
+
+        <div id="prediction-results" style="display: none;">
+            <!-- Prediction Result -->
+            <div class="prediction-result">
+                <h3><i class="fas fa-chart-line me-2"></i>Predicted Final Grade</h3>
+                <div class="prediction-value" id="prediction-value">--</div>
+                <p class="mb-0">Out of 20 points</p>
+            </div>
+
+            <!-- AI Explanation -->
+            <div class="explanation-card">
+                <h4><i class="fas fa-brain text-primary me-2"></i>AI Model Explanation</h4>
+                <p class="text-muted">Our AI model analyzed all input features to make this prediction. Here's how different factors influenced the result:</p>
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <h5><i class="fas fa-arrow-up text-success me-2"></i>Positive Influences</h5>
+                        <div id="positive-features">
+                            <!-- Positive features will be populated here -->
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <h5><i class="fas fa-arrow-down text-danger me-2"></i>Negative Influences</h5>
+                        <div id="negative-features">
+                            <!-- Negative features will be populated here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SHAP Visualization -->
+            <div class="explanation-card">
+                <h4><i class="fas fa-chart-bar text-primary me-2"></i>Feature Impact Visualization</h4>
+                <p class="text-muted">This chart shows how each feature pushed the prediction above or below the average expected grade:</p>
+                <div id="shap-plot-container" class="text-center">
+                    <!-- SHAP plot will be displayed here -->
+                </div>
+            </div>
+
+            <!-- Model Confidence -->
+            <div class="explanation-card">
+                <h4><i class="fas fa-shield-alt text-primary me-2"></i>Prediction Confidence</h4>
+                <div class="row">
+                    <div class="col-md-4 text-center">
+                        <div class="h3 text-info" id="confidence-score">--</div>
+                        <small class="text-muted">Confidence Level</small>
+                    </div>
+                    <div class="col-md-4 text-center">
+                        <div class="h3 text-warning" id="base-value">--</div>
+                        <small class="text-muted">Expected Average</small>
+                    </div>
+                    <div class="col-md-4 text-center">
+                        <div class="h3 text-success" id="prediction-range">--</div>
+                        <small class="text-muted">Likely Range</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer class="text-center py-4 text-white-50">
+        <p>&copy; 2024 Student Performance Predictor with Enhanced AI Explanations</p>
+    </footer>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Mock data for demonstration
+        const mockFeatureImportance = {
+            'G2': 0.45,
+            'G1': 0.35,
+            'studytime': 0.08,
+            'failures': -0.12,
+            'absences': -0.06,
+            'age': 0.03,
+            'Medu': 0.04,
+            'Fedu': 0.02,
+            'famrel': 0.03,
+            'health': 0.02,
+            'goout': -0.04
+        };
+
+        document.getElementById('prediction-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            // Show loading
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('prediction-results').style.display = 'none';
+            
+            // Clear previous alerts
+            document.getElementById('alert-container').innerHTML = '';
+            
+            // Get form data
+            const formData = new FormData(this);
+            const data = {};
+            
+            // Validate and collect form data
+            let hasErrors = false;
+            for (let [key, value] of formData.entries()) {
+                if (!value || value.trim() === '') {
+                    showAlert(`Please fill in ${key}`, 'danger');
+                    hasErrors = true;
+                    break;
+                }
+                data[key] = value;
+            }
+            
+            if (hasErrors) {
+                document.getElementById('loading').style.display = 'none';
+                return;
+            }
+            
+            // Simulate API call
+            setTimeout(() => {
+                try {
+                    // Calculate prediction using a simplified model
+                    const prediction = calculatePrediction(data);
+                    
+                    if (prediction === null || isNaN(prediction)) {
+                        throw new Error("Invalid prediction calculation");
+                    }
+                    
+                    // Display results
+                    displayPredictionResults(prediction, data);
+                    
+                } catch (error) {
+                    console.error('Prediction error:', error);
+                    showAlert('Prediction failed: ' + error.message, 'danger');
+                } finally {
+                    document.getElementById('loading').style.display = 'none';
+                }
+            }, 2000);
+        });
+        
+        function calculatePrediction(data) {
+            try {
+                // Ensure all required fields have valid numeric values
+                const G1 = parseFloat(data.G1) || 0;
+                const G2 = parseFloat(data.G2) || 0;
+                const studytime = parseInt(data.studytime) || 1;
+                const failures = parseInt(data.failures) || 0;
+                const absences = parseInt(data.absences) || 0;
+                const age = parseInt(data.age) || 16;
+                const Medu = parseInt(data.Medu) || 0;
+                const Fedu = parseInt(data.Fedu) || 0;
+                const famrel = parseInt(data.famrel) || 3;
+                const health = parseInt(data.health) || 3;
+                const goout = parseInt(data.goout) || 3;
+                
+                // Simplified prediction model based on common patterns
+                let prediction = 0;
+                
+                // Previous grades are the strongest predictors
+                prediction += G1 * 0.3;
+                prediction += G2 * 0.5;
+                
+                // Study time positive impact
+                prediction += studytime * 0.5;
+                
+                // Failures negative impact
+                prediction -= failures * 1.5;
+                
+                // Absences negative impact
+                prediction -= absences * 0.05;
+                
+                // Family education positive impact
+                prediction += (Medu + Fedu) * 0.2;
+                
+                // Family relationship positive impact
+                prediction += famrel * 0.3;
+                
+                // Health positive impact
+                prediction += health * 0.2;
+                
+                // Going out slight negative impact
+                prediction -= (goout - 3) * 0.1;
+                
+                // Age slight impact
+                prediction += (18 - age) * 0.1;
+                
+                // Ensure prediction is within reasonable bounds
+                prediction = Math.max(0, Math.min(20, prediction));
+                
+                return prediction;
+                
+            } catch (error) {
+                console.error('Error in prediction calculation:', error);
+                return null;
+            }
+        }
+        
+        function displayPredictionResults(prediction, inputData) {
+            // Show prediction value
+            document.getElementById('prediction-value').textContent = prediction.toFixed(2);
+            
+            // Calculate and display feature impacts
+            displayFeatureImpacts(inputData, prediction);
+            
+            // Display confidence metrics
+            const baseValue = 11.5; // Average grade
+            const confidence = Math.max(0.7, Math.min(0.95, 1 - Math.abs(prediction - baseValue) / 10));
+            const range = (prediction * 0.1).toFixed(1);
+            
+            document.getElementById('confidence-score').textContent = (confidence * 100).toFixed(0) + '%';
+            document.getElementById('base-value').textContent = baseValue.toFixed(1);
+            document.getElementById('prediction-range').textContent = `±${range}`;
+            
+            // Generate mock SHAP plot
+            generateMockShapPlot(inputData, prediction);
+            
+            // Show results
+            document.getElementById('prediction-results').style.display = 'block';
+            document.getElementById('prediction-results').scrollIntoView({ behavior: 'smooth' });
+        }
+        
+        function displayFeatureImpacts(inputData, prediction) {
+            const baseValue = 11.5;
+            const impacts = calculateFeatureImpacts(inputData, prediction, baseValue);
+            
+            const positiveContainer = document.getElementById('positive-features');
+            const negativeContainer = document.getElementById('negative-features');
+            
+            positiveContainer.innerHTML = '';
+            negativeContainer.innerHTML = '';
+            
+            // Sort impacts by absolute value
+            const sortedImpacts = Object.entries(impacts)
+                .sort((a, b) => Math.abs(b[1]) - Math.abs(a[1]));
+            
+            sortedImpacts.forEach(([feature, impact]) => {
+                const featureDiv = document.createElement('div');
+                featureDiv.className = 'feature-impact';
+                
+                const featureName = getFeatureDisplayName(feature);
+                const impactValue = impact > 0 ? `+${impact.toFixed(2)}` : impact.toFixed(2);
+                const impactClass = impact > 0 ? 'impact-positive' : 'impact-negative';
+                
+                featureDiv.innerHTML = `
+                    <span>${featureName}</span>
+                    <span class="${impactClass}">${impactValue}</span>
+                `;
+                
+                if (impact > 0) {
+                    positiveContainer.appendChild(featureDiv);
+                } else {
+                    negativeContainer.appendChild(featureDiv);
+                }
+            });
+        }
+        
+        function calculateFeatureImpacts(inputData, prediction, baseValue) {
+            const impacts = {};
+            
+            // Calculate individual feature contributions
+            impacts['G1'] = parseFloat(inputData.G1) * 0.3 - baseValue * 0.3;
+            impacts['G2'] = parseFloat(inputData.G2) * 0.5 - baseValue * 0.5;
+            impacts['studytime'] = parseInt(inputData.studytime) * 0.5 - 2.5 * 0.5;
+            impacts['failures'] = -(parseInt(inputData.failures) * 1.5);
+            impacts['absences'] = -(parseInt(inputData.absences) * 0.05);
+            impacts['Medu'] = parseInt(inputData.Medu) * 0.2 - 2 * 0.2;
+            impacts['Fedu'] = parseInt(inputData.Fedu) * 0.2 - 2 * 0.2;
+            impacts['famrel'] = parseInt(inputData.famrel) * 0.3 - 3 * 0.3;
+            impacts['health'] = parseInt(inputData.health) * 0.2 - 3 * 0.2;
+            impacts['goout'] = -(parseInt(inputData.goout) - 3) * 0.1;
+            
+            return impacts;
+        }
+        
+        function getFeatureDisplayName(feature) {
+            const nameMap = {
+                'G1': 'First Period Grade',
+                'G2': 'Second Period Grade',
+                'studytime': 'Weekly Study Time',
+                'failures': 'Past Failures',
+                'absences': 'Number of Absences',
+                'Medu': "Mother's Education",
+                'Fedu': "Father's Education",
+                'famrel': 'Family Relationship',
+                'health': 'Health Status',
+                'goout': 'Social Activity Level',
+                'age': 'Age',
+                'sex': 'Gender',
+                'address': 'Address Type'
+            };
+            return nameMap[feature] || feature;
+        }
+        
+        function generateMockShapPlot(inputData, prediction) {
+            const container = document.getElementById('shap-plot-container');
+            
+            // Create a simple horizontal bar chart representation
+            const impacts = calculateFeatureImpacts(inputData, prediction, 11.5);
+            const sortedImpacts = Object.entries(impacts)
+                .sort((a, b) => Math.abs(b[1]) - Math.abs(a[1]))
+                .slice(0, 6); // Top 6 features
+            
+            let chartHTML = '<div style="max-width: 600px; margin: 0 auto;">';
+            
+            sortedImpacts.forEach(([feature, impact]) => {
+                const width = Math.abs(impact) * 20; // Scale for visualization
+                const color = impact > 0 ? '#28a745' : '#dc3545';
+                const direction = impact > 0 ? 'right' : 'left';
+                
+                chartHTML += `
+                    <div style="display: flex; align-items: center; margin: 10px 0; font-size: 14px;">
+                        <div style="width: 150px; text-align: right; padding-right: 10px;">
+                            ${getFeatureDisplayName(feature)}
+                        </div>
+                        <div style="width: 200px; position: relative; height: 20px; background: #f8f9fa; border-radius: 10px;">
+                            <div style="
+                                height: 100%; 
+                                width: ${Math.min(width, 100)}%; 
+                                background: ${color}; 
+                                border-radius: 10px;
+                                ${impact < 0 ? 'margin-left: auto;' : ''}
+                            "></div>
+                        </div>
+                        <div style="width: 60px; text-align: left; padding-left: 10px; color: ${color}; font-weight: bold;">
+                            ${impact > 0 ? '+' : ''}${impact.toFixed(2)}
+                        </div>
+                    </div>
+                `;
+            });
+            
+            chartHTML += '</div>';
+            container.innerHTML = chartHTML;
+        }
+        
+        function showAlert(message, type) {
+            const alertContainer = document.getElementById('alert-container');
+            const alert = document.createElement('div');
+            alert.className = `alert alert-${type} alert-dismissible fade show`;
+            alert.innerHTML = `
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            alertContainer.appendChild(alert);
+            
+            // Auto-dismiss after 5 seconds
+            setTimeout(() => {
+                if (alert.parentNode) {
+                    alert.remove();
+                }
+            }, 5000);
+        }
+    </script>
+</body>
+</html>
+

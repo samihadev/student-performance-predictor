@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- Data Overview Card -->
+    <div class="card mb-4">
+        <div class="card-header bg-primary text-white">
+            <h4>Data Overview</h4>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <h5>Dataset Information</h5>
+                    <ul class="list-group mb-3">
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            Number of Students
+                            <span class="badge bg-primary rounded-pill">{{ stats.rows }}</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            Number of Features
+                            <span class="badge bg-primary rounded-pill">{{ stats.columns }}</span>
+                        </li>
+                    </ul>
+                </div>
+                <div class="col-md-6">
+                    <h5>Numeric Statistics</h5>
+                    <div class="table-responsive">
+                        {{ stats.numeric_stats|safe }}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Target Distribution Visualization -->
+    {% if visualizations and visualizations.target_dist %}
+    <div class="card mb-4">
+        <div class="card-header bg-info text-white">
+            <h4>Grade Distribution Analysis</h4>
+        </div>
+        <div class="card-body text-center">
+            <img src="data:image/png;base64,{{ visualizations.target_dist }}"
+                 class="img-fluid rounded"
+                 alt="Grade Distribution"
+                 style="max-width: 800px;">
+            <p class="mt-2 text-muted">Distribution of final grades (G3) across all students</p>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Correlation Heatmap -->
+    {% if visualizations and visualizations.correlation %}
+    <div class="card mb-4">
+        <div class="card-header bg-info text-white">
+            <h4>Feature Correlations</h4>
+        </div>
+        <div class="card-body text-center">
+            <img src="data:image/png;base64,{{ visualizations.correlation }}"
+                 class="img-fluid rounded"
+                 alt="Feature Correlation"
+                 style="max-width: 900px;">
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Navigation Button -->
+    <div class="d-grid gap-2">
+        <a href="{{ url_for('train') }}" class="btn btn-primary btn-lg py-3">
+            Proceed to Model Training →
+        </a>
+    </div>
+</div>
+{% endblock %}
+
+
+
+
+

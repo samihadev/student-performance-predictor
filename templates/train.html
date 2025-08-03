@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0">Select Features for Modeling</h4>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('train') }}">
+                    <div class="mb-3">
+                        <h5>Available Features</h5>
+                        <p>Select the features you want to include in the model:</p>
+                        
+                        <div class="row">
+                            {% for feature in features %}
+                                <div class="col-md-4 mb-2">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" 
+                                               name="features" value="{{ feature }}" id="{{ feature }}" checked>
+                                        <label class="form-check-label" for="{{ feature }}">
+                                            {{ feature }}
+                                        </label>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary">Train Models</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Performance Predictor</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        .navbar {
+            background: rgba(255, 255, 255, 0.95) !important;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 2px 20px rgba(0, 0, 0, 0.1);
+        }
+        
+        .container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 2rem;
+            margin: 2rem auto;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            backdrop-filter: blur(10px);
+        }
+        
+        .main-card {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            border-left: 4px solid #667eea;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .upload-section {
+            background: white;
+            border-radius: 15px;
+            padding: 2rem;
+            border: 2px dashed #667eea;
+            text-align: center;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .upload-section:hover {
+            border-color: #764ba2;
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.2);
+        }
+
+        .upload-section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+            transition: left 0.5s;
+        }
+
+        .upload-section:hover::before {
+            left: 100%;
+        }
+
+        .form-control {
+            border: 2px solid #e9ecef;
+            border-radius: 10px;
+            padding: 0.75rem;
+            transition: all 0.3s ease;
+        }
+
+        .form-control:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+        }
+
+        .btn-upload {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            border: none;
+            padding: 1rem 2rem;
+            border-radius: 50px;
+            color: white;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: all 0.3s ease;
+        }
+
+        .btn-upload:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+            color: white;
+        }
+
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1rem;
+            margin: 2rem 0;
+        }
+
+        .feature-card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 15px;
+            text-align: center;
+            transition: all 0.3s ease;
+            border: 1px solid #e9ecef;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        }
+
+        .feature-icon {
+            font-size: 2.5rem;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 1rem;
+        }
+
+        .alert {
+            border-radius: 15px;
+            border: none;
+            padding: 1rem 1.5rem;
+            backdrop-filter: blur(10px);
+        }
+
+        .stats-card {
+            background: linear-gradient(45deg, #28a745, #20c997);
+            color: white;
+            padding: 1.5rem;
+            border-radius: 15px;
+            text-align: center;
+            margin: 1rem 0;
+        }
+
+        .upload-icon {
+            font-size: 4rem;
+            color: #667eea;
+            margin-bottom: 1rem;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .animated {
+            animation: fadeInUp 0.6s ease;
+        }
+
+        .drag-drop-area {
+            position: relative;
+            z-index: 1;
+        }
+
+        .file-input-wrapper {
+            position: relative;
+            overflow: hidden;
+            display: inline-block;
+            width: 100%;
+        }
+
+        .file-input-wrapper input[type=file] {
+            position: absolute;
+            left: -9999px;
+        }
+
+        .file-input-label {
+            cursor: pointer;
+            display: block;
+            padding: 1rem;
+            background: #f8f9fa;
+            border: 2px dashed #dee2e6;
+            border-radius: 10px;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .file-input-label:hover {
+            background: #e9ecef;
+            border-color: #667eea;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-light">
+        <div class="container-fluid">
+            <a class="navbar-brand fw-bold text-primary" href="#">
+                <i class="fas fa-graduation-cap me-2"></i>Student Performance Predictor
+            </a>
+            <div class="navbar-nav ms-auto">
+                <a class="nav-link active" href="#"><i class="fas fa-upload me-1"></i>Upload Data</a>
+                <a class="nav-link" href="#"><i class="fas fa-chart-line me-1"></i>Analyze</a>
+                <a class="nav-link" href="#"><i class="fas fa-brain me-1"></i>Predict</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container animated">
+        <h2 class="text-center mb-4">
+            <i class="fas fa-cloud-upload-alt text-primary me-2"></i>Upload Student Data for AI Analysis
+        </h2>
+
+        <!-- Flash Messages -->
+        {% with messages = get_flashed_messages() %}
+        {% if messages %}
+        <div id="alert-container">
+            {% for message in messages %}
+            <div class="alert alert-warning alert-dismissible fade show" role="alert">
+                <i class="fas fa-exclamation-triangle me-2"></i>{{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+        {% endwith %}
+
+        <!-- Main Upload Section -->
+        <div class="main-card">
+            <div class="upload-section">
+                <div class="drag-drop-area">
+                    <i class="fas fa-cloud-upload-alt upload-icon"></i>
+                    <h4 class="mb-3">Upload Your Student Dataset</h4>
+                    <p class="text-muted mb-4">
+                        Upload a CSV or Excel file containing student data with a <code>G3</code> column (final grade).
+                        The AI system will analyze the data and build predictive models.
+                    </p>
+
+                    <form method="POST" enctype="multipart/form-data" action="{{ url_for('index') }}" id="upload-form">
+                        <div class="mb-4">
+                            <div class="file-input-wrapper">
+                                <input type="file" id="file" name="file" accept=".csv,.xlsx" required onchange="updateFileName(this)">
+                                <label for="file" class="file-input-label">
+                                    <i class="fas fa-file-upload me-2"></i>
+                                    <span id="file-label">Choose file or drag and drop here</span>
+                                </label>
+                            </div>
+                            <small class="form-text text-muted mt-2">
+                                <i class="fas fa-info-circle me-1"></i>Supported formats: CSV, Excel (.xlsx)
+                            </small>
+                        </div>
+                        <button type="submit" class="btn btn-upload">
+                            <i class="fas fa-brain me-2"></i>Upload and Start AI Analysis
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Features Section -->
+        <div class="main-card">
+            <h4 class="text-center mb-4">
+                <i class="fas fa-robot text-primary me-2"></i>AI-Powered Student Performance Analysis
+            </h4>
+            <p class="text-center text-muted mb-4">
+                Our advanced machine learning system analyzes multiple factors to predict student performance with high accuracy.
+            </p>
+
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-user-graduate"></i>
+                    </div>
+                    <h6>Demographics</h6>
+                    <small class="text-muted">Age, gender, address type, and family background</small>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-home"></i>
+                    </div>
+                    <h6>Family Background</h6>
+                    <small class="text-muted">Parent education, family size, and relationships</small>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-book"></i>
+                    </div>
+                    <h6>Study Habits</h6>
+                    <small class="text-muted">Study time, extra activities, and support</small>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-school"></i>
+                    </div>
+                    <h6>School Factors</h6>
+                    <small class="text-muted">Absences, school support, and past performance</small>
+                </div>
+            </div>
+        </div>
+
+        <!-- Model Information -->
+        <div class="main-card">
+            <h4 class="text-center mb-4">
+                <i class="fas fa-cogs text-primary me-2"></i>Advanced Machine Learning Models
+            </h4>
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="stats-card">
+                        <h5><i class="fas fa-tree me-2"></i>Random Forest</h5>
+                        <p class="mb-0">Ensemble learning for robust predictions</p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="stats-card" style="background: linear-gradient(45deg, #fd7e14, #e83e8c);">
+                        <h5><i class="fas fa-rocket me-2"></i>Gradient Boosting</h5>
+                        <p class="mb-0">Sequential learning for high accuracy</p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="stats-card" style="background: linear-gradient(45deg, #6f42c1, #d63384);">
+                        <h5><i class="fas fa-brain me-2"></i>AdaBoost</h5>
+                        <p class="mb-0">Adaptive boosting for optimal performance</p>
+                    </div>
+                </div>
+            </div>
+            <p class="text-center mt-3 text-muted">
+                The system automatically compares all models and selects the best performer for your dataset.
+            </p>
+        </div>
+
+        <!-- Instructions -->
+        <div class="main-card">
+            <h4 class="text-center mb-4">
+                <i class="fas fa-list-check text-primary me-2"></i>Getting Started
+            </h4>
+            <div class="row">
+                <div class="col-md-6">
+                    <h6><i class="fas fa-upload text-success me-2"></i>Step 1: Upload Data</h6>
+                    <p class="text-muted">Upload your student dataset in CSV or Excel format. Ensure it includes a G3 column for final grades.</p>
+                </div>
+                <div class="col-md-6">
+                    <h6><i class="fas fa-chart-area text-info me-2"></i>Step 2: Analyze</h6>
+                    <p class="text-muted">View comprehensive data analysis including statistics, distributions, and correlations.</p>
+                </div>
+                <div class="col-md-6">
+                    <h6><i class="fas fa-cog text-warning me-2"></i>Step 3: Train Models</h6>
+                    <p class="text-muted">Select features and train multiple machine learning models automatically.</p>
+                </div>
+                <div class="col-md-6">
+                    <h6><i class="fas fa-magic text-primary me-2"></i>Step 4: Predict</h6>
+                    <p class="text-muted">Make predictions for new students with detailed AI explanations.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer class="text-center py-4 text-white-50">
+        <p>&copy; 2024 Student Performance Predictor with Enhanced AI Analysis</p>
+    </footer>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function updateFileName(input) {
+            const label = document.getElementById('file-label');
+            if (input.files && input.files[0]) {
+                label.innerHTML = `<i class="fas fa-file-check me-2"></i>${input.files[0].name}`;
+                label.style.color = '#28a745';
+            } else {
+                label.innerHTML = '<i class="fas fa-file-upload me-2"></i>Choose file or drag and drop here';
+                label.style.color = '';
+            }
+        }
+
+        // Drag and drop functionality
+        const uploadSection = document.querySelector('.upload-section');
+        const fileInput = document.getElementById('file');
+
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            uploadSection.addEventListener(eventName, preventDefaults, false);
+            document.body.addEventListener(eventName, preventDefaults, false);
+        });
+
+        ['dragenter', 'dragover'].forEach(eventName => {
+            uploadSection.addEventListener(eventName, highlight, false);
+        });
+
+        ['dragleave', 'drop'].forEach(eventName => {
+            uploadSection.addEventListener(eventName, unhighlight, false);
+        });
+
+        uploadSection.addEventListener('drop', handleDrop, false);
+
+        function preventDefaults(e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+
+        function highlight(e) {
+            uploadSection.style.borderColor = '#667eea';
+            uploadSection.style.backgroundColor = '#f8f9ff';
+        }
+
+        function unhighlight(e) {
+            uploadSection.style.borderColor = '#667eea';
+            uploadSection.style.backgroundColor = '';
+        }
+
+        function handleDrop(e) {
+            const dt = e.dataTransfer;
+            const files = dt.files;
+
+            if (files.length > 0) {
+                fileInput.files = files;
+                updateFileName(fileInput);
+            }
+        }
+
+        // Form submission with loading state
+        document.getElementById('upload-form').addEventListener('submit', function(e) {
+            const submitBtn = this.querySelector('button[type="submit"]');
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Processing...';
+            submitBtn.disabled = true;
+        });
+
+        // Auto-dismiss alerts
+        setTimeout(() => {
+            const alerts = document.querySelectorAll('.alert');
+            alerts.forEach(alert => {
+                if (alert.parentNode) {
+                    alert.remove();
+                }
+            });
+        }, 5000);
+    </script>
+</body>
+</html>
+
